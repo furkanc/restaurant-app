@@ -1,0 +1,63 @@
+version: '3'
+services:
+  db:
+    image: mysql:8
+    restart: always
+    ports:
+      - "3306:3306"
+    env_file:
+      - .env.dev
+    volumes:
+      - /tmp/app/mysqld:/var/run/mysqld
+      - ./db:/var/lib/mysql
+      - .entry/db:/docker-entrypoint-initdb.d
+    networks:
+      - shared_network
+  
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: sh .entry/api/init.sh
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env.dev
+    networks:
+      - shared_network
+    depends_on:
+      - db
+      - rabbitmq 
+
+  consumer:
+    build: 
+      context: .
+      dockerfile: Dockerfile.consumer
+    command: python consumer.py
+    depends_on:
+      - rabbitmq
+      - api
+    env_file:
+       - .env.dev
+    networks:
+      - shared_network
+
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    container_name: rabbit
+    hostname: rabbit
+    env_file:
+      - .env.dev
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - shared_network
+
+networks:
+  shared_network:
+    driver: bridge

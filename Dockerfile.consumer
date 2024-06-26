@@ -1,0 +1,17 @@
+# Use an official Python runtime as a parent image
+FROM python:3.11.6-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONPATH "${PYTHONPATH}:/app"
+
+# Set the working directory
+WORKDIR /app
+
+# Install dependencies
+COPY ./requirements-consumer.txt /tmp
+
+RUN pip install -r /tmp/requirements-consumer.txt
+
+COPY pubsub/consumer.py .
